@@ -5,7 +5,7 @@
 
 max_calories = 0
 current_calories = 0
-with open('input.txt', 'r') as filet:
+with open('01_input.txt', 'r') as filet:
     for line in filet.readlines():
 
         # check for empty line
