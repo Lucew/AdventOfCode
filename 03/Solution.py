@@ -52,7 +52,7 @@ def main2():
 
 
 def unholy_main1():
-    print(sum(map(score, (set(rucksack.rstrip()[:len(rucksack)//2]).intersection(rucksack[len(rucksack)//2:]).pop() for rucksack in open('input.txt').readlines()))))
+    print(sum(map(lambda char: ord(char) - 38 if ord(char) < 97 else ord(char) - 96, (set(rucksack.rstrip()[:len(rucksack)//2]).intersection(rucksack[len(rucksack)//2:]).pop() for rucksack in open('input.txt').readlines()))))
 
 
 def unholy_main2():
