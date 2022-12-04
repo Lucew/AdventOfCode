@@ -36,6 +36,16 @@ def main2():
     print(f'The result for solution 2 is: {result}')
 
 
+def golfing_main1():
+    print(sum(map(lambda x: (x[2] <= x[0] and x[1] <= x[3]) or (x[0] <= x[2] and x[3] <= x[1]), (list(map(int, line.rstrip().replace('-', ',').split(','))) for line in open('input.txt').readlines()))))
+
+
+def golfing_main2():
+    print(sum(map(lambda x: (x[2] <= x[0] <= x[3]) or (x[0] <= x[2] <= x[1]),(list(map(int, line.rstrip().replace('-', ',').split(','))) for line in open('input.txt').readlines()))))
+
+
 if __name__ == '__main__':
     main1()
     main2()
+    golfing_main1()
+    golfing_main2()
