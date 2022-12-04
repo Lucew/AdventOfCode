@@ -1,3 +1,9 @@
+from collections import Counter, defaultdict
+from heapq import heappop, heappush, heappushpop
+from functools import reduce
+from bisect import bisect_left, bisect_right
+
+
 def read_input(path: str = 'input.txt'):
     inputs = []
     with open(path) as filet:
