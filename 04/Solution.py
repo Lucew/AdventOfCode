@@ -41,7 +41,7 @@ def golfing_main1():
 
 
 def golfing_main2():
-    print(sum(map(lambda x: (x[2] <= x[0] <= x[3]) or (x[0] <= x[2] <= x[1]),(list(map(int, line.rstrip().replace('-', ',').split(','))) for line in open('input.txt').readlines()))))
+    print(sum(map(lambda x: (x[2] <= x[0] <= x[3]) or (x[0] <= x[2] <= x[1]), (list(map(int, line.rstrip().replace('-', ',').split(','))) for line in open('input.txt').readlines()))))
 
 
 if __name__ == '__main__':
