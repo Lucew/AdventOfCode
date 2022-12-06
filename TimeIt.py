@@ -3,12 +3,14 @@ import os
 import importlib
 import contextlib
 from inspect import getmembers, isfunction, getfullargspec
+from argparse import ArgumentParser
+import time
 
 
-def import_folder_modules():
+def import_folder_modules(partial_module_name: str = 'Solution'):
     imported_modules = []
     for module in os.listdir(os.path.dirname(__file__)):
-        if module.endswith('.py') and 'Solution' in module:
+        if module.endswith('.py') and partial_module_name in module:
             imported_modules.append(importlib.import_module(module[:-3]))
     return imported_modules
 
@@ -22,10 +24,7 @@ def check_input_arguments(function: callable):
     return not specc.args or (not specc.defaults or len(specc.args) == len(specc.defaults))
 
 
-def prepare_modules(valid_function_names: tuple = ('main1', 'main2')):
-
-    # import all *Solution*.py files in the folder
-    modules = import_folder_modules()
+def prepare_modules(modules: list, valid_function_names: tuple = ('main1', 'main2')):
 
     # go through the models and get handles to all functions that have the specified names
     function_handles = dict()
@@ -43,10 +42,11 @@ def prepare_modules(valid_function_names: tuple = ('main1', 'main2')):
     return function_handles
 
 
-def time_the_functions(measurements: int = 5, repetition_per_measurement: int = 100):
+def time_the_functions(function_handles: dict[dict[callable]],
+                       measurements: int = 5, repetition_per_measurement: int = 100):
 
-    # get all the functions in our current directory
-    function_handles = prepare_modules()
+    # get the elapsed time for the measurements
+    started = time.time()
 
     # go through the functions and time them (suppressing print output)
     timings = dict()
@@ -79,7 +79,9 @@ def time_the_functions(measurements: int = 5, repetition_per_measurement: int = 
 
     # sort the timings and create the table lines
     timings = sorted(timings.items(), key=lambda x: x[1])
-    table_lines = [f'| {key.ljust(max_key_length)} | {value*1000:0.2f}' for key, value in timings]
+    table_lines = [f'| {key.ljust(max_key_length)} | {value*1000:0.2f} '
+                   f'(+{(value - timings[idx-1][1])*1000 if idx else 0:0.2f})'
+                   for idx, (key, value) in enumerate(timings)]
 
     # get the table width
     table_width = max(max(len(line) for line in table_lines), len(table_header))
@@ -103,6 +105,35 @@ def time_the_functions(measurements: int = 5, repetition_per_measurement: int = 
         print(line.ljust(table_width) + ' |')
     print(table_separator)
 
+    # make the timing overall print
+    print()
+    print(f'Overall time elapsed during this test (including prints): { time.time() - started:0.3f} s.')
+    print()
+
+
+def main(args):
+
+    # import the modules with specified name
+    modules = import_folder_modules(partial_module_name=args.module)
+
+    # get all the functions in our current directory
+    function_handles = prepare_modules(modules, valid_function_names=tuple(args.functions))
+
+    # time and print the function
+    time_the_functions(function_handles, measurements=args.measurements, repetition_per_measurement=args.repetitions)
+
 
 if __name__ == '__main__':
-    time_the_functions()
+
+    # make the parser
+    parser = ArgumentParser(prog='AoC Function Timing',
+                            description='This script searches through your folder and times specified functions.')
+
+    # add some arguments
+    parser.add_argument('-m', '--module', default='Solution', help='Substring to select modules. Case sensitive.')
+    parser.add_argument('-f', '--functions', default=('main1', 'main2'), type=str, nargs='+',
+                        help='Exact names of functions we want to test.')
+    parser.add_argument('-ms', '--measurements', type=int, default=5,
+                        help='Measurements. The amount of runs is: functions*measurements*repetitions.')
+    parser.add_argument('-rs', '--repetitions', type=int, default=100, help='Repetitions per measurement.')
+    main(parser.parse_args())
