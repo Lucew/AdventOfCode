@@ -24,17 +24,16 @@ def solution(line: str, window_length: int):
     idx = 0
     for idx, ch in enumerate(line):
 
-        # guard clause for filling the dict
-        if idx < window_length:
-            sliding[ch] += 1
-            continue
-
         # check whether the dict has window length
         if len(sliding) == window_length:
             break
 
         # add the new char
         sliding[ch] += 1
+
+        # guard clause for filling the dict
+        if idx < window_length:
+            continue
 
         # delete the old char if necessary
         if sliding[line[idx - window_length]] == 1:
