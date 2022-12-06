@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# This solution has been stolen and modified from: https://gitlab.com/itodnerd/adventofcode
+# for testing purposes of the timing functions
+
 
 def firstStart(line: str):
     line = line[:-1]
@@ -16,6 +19,7 @@ def secondStar(line: str):
         if max(map(lambda char: tester.count(char), tester)) == 1:
             print(index+14)
             break
+
 
 def main1():
     input = open("input.txt", "r")
