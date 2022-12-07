@@ -55,7 +55,7 @@ def create_filesystem(instructions: list):
 
                     # every directory has two parts: the subdirectories and the files
                     # at this level
-                    cur_path[ele] = {'sub': dict(), 'files': [0]}
+                    cur_path[ele] = {'sub': dict(), 'files': {'/': 0}}
 
                 # check whether we reached the end of our stack
                 if idx == len(stack) - 1:
@@ -66,7 +66,7 @@ def create_filesystem(instructions: list):
                     cur_path = cur_path[ele]['sub']
 
             # append the file size
-            cur_path['files'].append(int(line[0]))
+            cur_path['files'][line[1]] = int(line[0])
 
     return file_system
 
@@ -75,7 +75,7 @@ def create_filesystem(instructions: list):
 def recursive_walk(folder, current_path, folder_sizes, max_size):
 
     # get the space of all files at the current folder level
-    folder_size = sum(folder['files'])
+    folder_size = sum(folder['files'].values())
 
     # check whether the folder has not further subdirectories
     # so we can return
