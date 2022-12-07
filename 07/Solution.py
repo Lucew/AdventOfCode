@@ -140,10 +140,12 @@ def main2():
     disc_space, accumulated_smaller = recursive_walk(file_system['/'], current_path, folder_sizes, 100000)
 
     # check the amount we need to free
-    need_to_free = 30000000 - (70000000 - disc_space)
+    max_space = 70_000_000
+    needed_space = 30_000_000
+    need_to_free = needed_space - (max_space - disc_space)
 
     # go through the sizes and find the smallest one larger than the space we need to free
-    min_space = 70000000
+    min_space = max_space
     for value in folder_sizes.values():
         if value > need_to_free:
             min_space = min(min_space, value)
