@@ -75,7 +75,13 @@ def main2():
     # create a matrix to save the score
     score = [[1]*len(trees[0]) for _ in range(len(trees))]
 
-    # go through the matrix row wise
+    # go through the matrix row and column wise. The implementation is O(N^2) instead O(N^4) which would be
+    # the straightforward solution by checking the score for each element by traversing from its position
+    # to the left, right, up and bottom end of the matrix.
+    #
+    # This solution is O(N^2) as we do the score for each direction in each row/column with one traversal
+    # by keeping and updating a linked list of elements bigger than the current element coming from both directions
+    # (monotonic decreasing stack approach)
     score_rows(trees, score)
     score_columns(trees, score)
 
