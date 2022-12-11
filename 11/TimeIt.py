@@ -131,9 +131,9 @@ if __name__ == '__main__':
 
     # add some arguments
     parser.add_argument('-m', '--module', default='Solution', help='Substring to select modules. Case sensitive.')
-    parser.add_argument('-f', '--functions', default=('main1', 'main2'), type=str, nargs='+',
+    parser.add_argument('-f', '--functions', default=('main1', 'main2', 'main3'), type=str, nargs='+',
                         help='Exact names of functions we want to test.')
     parser.add_argument('-ms', '--measurements', type=int, default=5,
                         help='Measurements. The amount of runs is: functions*measurements*repetitions.')
-    parser.add_argument('-rs', '--repetitions', type=int, default=100, help='Repetitions per measurement.')
+    parser.add_argument('-rs', '--repetitions', type=int, default=3, help='Repetitions per measurement.')
     main(parser.parse_args())
