@@ -214,8 +214,8 @@ def modulo_evaluator(function: str, old: int, modulo: int):
 
 def main2():
     """
-    The final approach is that we only need to track count of the modulos in order to track the passage of items
-    through the apes. The absolute worry value does not matter. So we only need to keep track how the operations
+    The final approach is that we only need to track different modulos for every ape in order to track the passage of
+    items through the apes. The absolute worry value does not matter. So we only need to keep track how the operations
     of each ape change the modulo.
 
     As there is a limited amount of apes (and therefore modulos) we create a dict of modulos for every ape and
