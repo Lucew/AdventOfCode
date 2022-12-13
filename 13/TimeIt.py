@@ -7,6 +7,18 @@ from argparse import ArgumentParser
 import time
 
 
+"""
+------------------------------------------------
+| Function names       | Minimum runtime in ms |
+------------------------------------------------
+| Solution.main1       | 7.22 (+0.00)          |
+| Solution.main2       | 10.41 (+3.18)         |
+| DemianSolution.main1 | 16.46 (+6.05)         |
+| DemianSolution.main2 | 188.66 (+172.20)      |
+------------------------------------------------
+"""
+
+
 def import_folder_modules(partial_module_name: str = 'Solution'):
     imported_modules = []
     for module in os.listdir(os.path.dirname(__file__)):
