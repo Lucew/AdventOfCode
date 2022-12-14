@@ -3,6 +3,12 @@ from sortedcontainers import SortedList
 
 
 """
+Spent way too much time overthinking all other solutions.
+NormalThinkingSolution is the feasible one.
+
+"""
+
+"""
 ------------------------------------------------
 | Function names       | Minimum runtime in ms |
 ------------------------------------------------

@@ -1,5 +1,11 @@
 from collections import defaultdict
 
+"""
+Spent way too much time overthinking all other solutions.
+NormalThinkingSolution is the feasible one.
+
+"""
+
 
 def read_input(path: str = 'input.txt'):
     inputs = []

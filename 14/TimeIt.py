@@ -7,6 +7,20 @@ from argparse import ArgumentParser
 import time
 
 
+"""
+--------------------------------------------------------
+| Function names               | Minimum runtime in ms |
+--------------------------------------------------------
+| NormalThinkingSolution.main1 | 20.76 (+0.00)         |
+| Solution.main1               | 47.20 (+26.44)        |
+| FasterSolution.main1         | 54.52 (+7.32)         |
+| NormalThinkingSolution.main2 | 816.26 (+761.74)      |
+| FasterSolution.main2         | 2171.01 (+1354.76)    |
+| Solution.main2               | 7603.13 (+5432.12)    |
+--------------------------------------------------------
+"""
+
+
 def import_folder_modules(partial_module_name: str = 'Solution'):
     imported_modules = []
     for module in os.listdir(os.path.dirname(__file__)):
