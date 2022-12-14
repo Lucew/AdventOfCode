@@ -1,7 +1,4 @@
-from collections import Counter, defaultdict
-from heapq import heappop, heappush, heappushpop
-from functools import reduce
-from bisect import bisect_left, bisect_right
+from collections import defaultdict
 
 
 def read_input(path: str = 'input.txt'):
@@ -39,7 +36,7 @@ def main1():
     units = 0
     while True:
 
-        # make a sandcorn
+        # make a sand corn
         rx, cx = 0, 500
 
         # get the end position
@@ -56,29 +53,21 @@ def main1():
                 rx = min(blocked_rx) - 1
 
             # check whether we can slide to the left
-            if cx-1 not in blocked:
-                print(f'The result for solution 1 is: {units}')
-                return
-            else:
-
-                # check for the element to the left to be existing
-                if rx+1 not in blocked[cx-1]:
-                    rx = rx+1
-                    cx = cx-1
-                    continue
+            if cx-1 in blocked and rx+1 not in blocked[cx-1]:
+                rx = rx+1
+                cx = cx-1
+                continue
 
             # check whether we can slide to the right
-            if cx + 1 not in blocked:
+            elif cx + 1 in blocked and rx + 1 not in blocked[cx + 1]:
+                rx = rx + 1
+                cx = cx + 1
+                continue
+
+            # check whether we fall into the abyss
+            elif cx-1 not in blocked or cx+1 not in blocked:
                 print(f'The result for solution 1 is: {units}')
                 return
-            else:
-
-                # check for the element to the left to be existing
-                if rx + 1 not in blocked[cx + 1]:
-                    rx = rx + 1
-                    cx = cx + 1
-                    continue
-
             # we cannot slide further
             blocked[cx].add(rx)
             units += 1
@@ -114,17 +103,14 @@ def main2():
     units = 0
     while True:
 
-        # make a sandcorn
+        # make a sand corn
         rx, cx = 0, 500
 
         # get the end position
         while True:
 
-            # get all the rows bigger than our current
-            blocked_rx = [ele for ele in blocked[cx] if ele > rx]
-
             # check the current column and find the highest row we land on
-            rx = min(blocked_rx) - 1
+            rx = min(ele for ele in blocked[cx] if ele > rx) - 1
 
             if rx+1 not in blocked[cx-1]:
                 rx = rx + 1
