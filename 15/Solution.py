@@ -1,4 +1,4 @@
-from bisect import bisect_right
+from bisect import bisect_left, bisect_right
 
 
 # from : https://gist.github.com/ericremoreynolds/2d80300dabc70eebc790
@@ -30,6 +30,25 @@ def read_input(path: str = 'input.txt'):
 
 
 def merge_intervals(intervals, interval):
+    # find the first interval we are overlapping with
+    idx_left = bisect_left(KeyifyList(intervals, lambda x: x[1]+1), interval[0])
+
+    # find the last interval we are overlapping with
+    idx_right = bisect_right(KeyifyList(intervals, lambda x: x[0]), interval[1]+1)
+
+    # check whether we overlap with anything
+    if idx_left < len(intervals) and idx_left != idx_right:
+
+        # merge the intervals
+        intervals = intervals[:idx_left] \
+                    + [[min(interval[0], intervals[idx_left][0]), max(interval[1], intervals[idx_right-1][1])]] \
+                    + intervals[idx_right:]
+    else:
+        intervals.insert(idx_left, interval)
+    return intervals
+
+
+def merge_intervals1(intervals, interval):
     # find the interval in our blocked intervals
     idx = bisect_right(KeyifyList(intervals, lambda x: x[0]), interval[0])
 
@@ -86,13 +105,12 @@ def block_row(coordinates, target_row):
             interval = [sx - blocked_fields, sx + blocked_fields]
 
             # merge the intervals
-            merge_intervals(blocked, interval)
+            blocked = merge_intervals(blocked, interval)
 
     return blocked, beacons
 
 
 def main1():
-
     # get the coordinates
     coordinates = read_input()
 
@@ -100,14 +118,13 @@ def main1():
     blocked, beacons = block_row(coordinates, 2_000_000)
 
     # get the blocked areas
-    blocked = sum(ele[1]-ele[0]+1 for ele in blocked)
+    blocked = sum(ele[1] - ele[0] + 1 for ele in blocked)
 
     # print the result
     print(f'The result for solution 1 is: {blocked - len(beacons)}')
 
 
 def main2():
-
     # get the coordinates
     coordinates = read_input()
 
@@ -127,20 +144,21 @@ def main2():
         idx = bisect_right(KeyifyList(blocked, lambda x: x[0]), search_interval[0])
 
         # check whether we are included
-        if 0 < idx and blocked[idx-1][0] <= search_interval[0] and search_interval[1] <= blocked[idx-1][1]:
+        if 0 < idx and blocked[idx - 1][0] <= search_interval[0] and search_interval[1] <= blocked[idx - 1][1]:
             # there is no beacon possible in this row
             continue
         else:
             rx = row
             # make special conditions
             if idx == 0:
-                cx = blocked[0][0]-1
+                cx = blocked[0][0] - 1
             else:
-                cx = blocked[idx-1][1]+1
+                cx = blocked[idx - 1][1] + 1
 
             # we found it
             print(rx, cx)
-            print(f'The result for solution 2 is: {rx+cx*4_000_000}')
+            print(f'The result for solution 2 is: {rx + cx * 4_000_000}')
+            return
 
 
 if __name__ == '__main__':
