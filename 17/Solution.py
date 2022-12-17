@@ -1,5 +1,5 @@
 import time
-import functools as ft
+import collections
 
 
 def read_input(path: str = 'input.txt'):
@@ -12,7 +12,7 @@ def pattern_generator(pattern: str):
     idx = 0
     n = len(pattern)
     while True:
-        yield pattern[idx]
+        yield pattern[idx], idx
         idx = (idx + 1) % n
 
 
@@ -37,6 +37,9 @@ class Rock:
         else:
             raise NotImplementedError(f'Tried to spawn rock of type: {rock_type}')
 
+        # save the rock type
+        self.type = rock_type
+
     def get_positions(self) -> list[tuple[int]]:
         return [tuple(position) for position in self.positions]
 
@@ -55,9 +58,10 @@ class Cave:
         self.wind_generator = pattern_generator(wind_pattern)
         self.rock_type_generator = pattern_generator(rock_pattern)
         self.rock_counter = 0
+        self.state_cache = collections.defaultdict(list)
 
     def _spawn_rock(self):
-        self.falling_rock = Rock(next(self.rock_type_generator), self.highest+4, 2)
+        self.falling_rock = Rock(next(self.rock_type_generator)[0], self.highest+4, 2)
 
     def _place_rock(self, rock: Rock):
         """get the positions of the rock
@@ -88,6 +92,25 @@ class Cave:
     def highest_row_blocked(self):
         # check whether a complete row is blocked (we could clean the occupied dict then)
         return all((x, self.highest) in self.occupied for x in range(0, self.width))
+
+    def detect_cycles(self) -> tuple[tuple[int, int], int, int]:
+        # check the state cache for repeated states
+        cycles = []
+
+        # find the cycle
+        for value in self.state_cache.values():
+            if len(value) > 1:
+                cycles = value
+                break
+
+        # return none if not correct
+        if not cycles:
+            return (-1, -1), -1, -1
+
+        # get the cycle modulo and the height increase as each element in self.state_cache.values()
+        # is : (rock_counter, current_highest_resting_rock)
+        # also return the begin of the cycle and the height at this point
+        return cycles[0], cycles[1][0] - cycles[0][0], cycles[1][1] - cycles[0][1]
 
     @staticmethod
     def _get_direction_from_string(direction: str, inverse: bool = False):
@@ -153,34 +176,36 @@ class Cave:
     def __str__(self):
         return self._make_string()
 
-    def cave_repeats(self):
-
-        # make the cave string
-        cave_string = self._make_string(print_falling_rock=False, print_ground=False)
-
-        # get the number of lines
-        line_numbers = len(cave_string) // (self.width + 3)
-
-        # get the index of the half
-        half = line_numbers // 2
-
-        # check whether a pattern repeats
-        return line_numbers % 2 == 0 and cave_string[:half] == cave_string[half:]
+    def _get_surface_profile(self):
+        # go through each column and find the first element that is blocked coming from top
+        # this gives us a surface profile that determines a repeated state
+        profile = []
+        for x in range(0, self.width):
+            y = self.highest
+            while not self._check_collision(x, y):
+                y -= 1
+            profile.append(self.highest - y)
+        return tuple(profile)
 
     def step(self):
 
         # get the current wind
-        wind = next(self.wind_generator)
+        wind, wind_idx = next(self.wind_generator)
 
         # boolean whether we placed a rock in this step
         placed = False
 
-        # get the direction
-        dx, dy = self._get_direction_from_string(wind)
-
-        # check if we have a falling rock or spawn one
+        # check if we have a falling rock or spawn one into the cave
         if not self.falling_rock:
+
+            # spawn the rock
             self._spawn_rock()
+
+            # create a unique key of the state for cycle detection
+            key = (*self._get_surface_profile(), wind_idx, self.falling_rock.type)
+
+            # append the current rock counter to the state cache
+            self.state_cache[key].append((self.rock_counter, self.highest))
 
         # apply the wind to the rock
         self.falling_rock.move(*self._get_direction_from_string(wind))
@@ -223,42 +248,6 @@ def main1(rocks=2022):
     print(f'The result for solution 1 is: {cave.highest+1}')
 
 
-def longest_repeated_substring(pattern):
-    # https: // www.geeksforgeeks.org / longest - repeating - and -non - overlapping - substring /
-    n = len(pattern)
-    dp = [[0 for _ in range(n + 1)] for _ in range(n + 1)]
-    res_length = 0  # To store length of result
-
-    # building table in bottom-up manner
-    index = 0
-    for i in range(1, n + 1):
-        for j in range(i + 1, n + 1):
-
-            # (j-i) > dp[i-1][j-1] to remove overlapping
-            if pattern[i - 1] == pattern[j - 1] and dp[i - 1][j - 1] < (j - i):
-                dp[i][j] = dp[i - 1][j - 1] + 1
-
-                # updating maximum length of the substring and updating the finishing
-                # index of the suffix
-                if dp[i][j] > res_length:
-                    res_length = dp[i][j]
-                    index = max(i, index)
-
-            else:
-                dp[i][j] = 0
-
-    # If we have non-empty result, then insert all characters from first character to
-    # last character of string
-    res = pattern[index - res_length:index]
-    return res, index
-
-
-def string_is_repeated(pattern: str):
-    # https://www.geeksforgeeks.org/python-check-if-string-repeats-itself/
-    position = (pattern + pattern).find(pattern, 1, -1)
-    return position != -1, pattern[:position]
-
-
 def main2(target=1_000_000_000_000):
     # read the jet pattern
     pattern = read_input()
@@ -267,59 +256,32 @@ def main2(target=1_000_000_000_000):
     cave = Cave(pattern)
 
     # amount of rocks we want to let fall
-    rocks = 6000
-
-    # initialize an array of height growth
-    heights = []
-    was_plattform = []
+    rocks = 2800
 
     # make several steps
     t = time.time()
-    prev_height = -1
+    heights = []
     while cave.rock_counter < rocks:
         if cave.step():
-            heights.append(cave.highest - prev_height)
-            prev_height = cave.highest
-
-            # check if we occupied a complete row
-            if cave.highest_row_blocked():
-                was_plattform.append((cave.rock_counter, cave.highest))
+            heights.append(cave.highest)
     elapsed = time.time() - t
     print(f'{rocks} rocks took {elapsed:0.4f} seconds. '
           f'For {target} rocks it will take: {target * elapsed / rocks / 3600 / 24:0.4f} days.')
     print(f'The height was: {cave.highest}')
 
-    """# convert heights to string
-    heights_string = "".join(str(height) for height in heights)
+    # detect cycles
+    (cycle_start, highest_start), cycle_size, height_per_cycle = cave.detect_cycles()
+    assert cycle_size != -1, 'Did not find a cycle.'
 
-    # find the longest repeated substring in heights
-    sub, first_occurrence = longest_repeated_substring(heights_string)
-    if not sub:
-        print('Did not find repeated subpattern')
+    # get the height before the first circle
+    result = heights[cycle_start]
 
-    # check whether this one is a repetition of itself
-    is_repeated, base = string_is_repeated(sub)
-    if not is_repeated:
-        print('Our subpattern needs to be repeated.')
+    # check how often the cycle fits into the target (minus the rocks before the cycle)
+    cycle_number, rest = divmod(target-cycle_start, cycle_size)
 
-    # get the height up until this point (we do not need the offset that, as we would normally start at -1)
-    until_height = sum(heights[:first_occurrence])
-    repeated_height = sum(heights[first_occurrence:first_occurrence+len(base)])
-
-    # compute the height of our testing immediately
-    test_rocks = target - first_occurrence
-    test_height = until_height
-    test_height += (test_rocks // len(base))*repeated_height
-    test_height += sum(heights[first_occurrence+1: first_occurrence + (test_rocks % len(base))])"""
-
-    # compute the height difference per platform
-    differences = [(rocks - was_plattform[idx][0], height - was_plattform[idx][1]) for idx, (rocks, height) in enumerate(was_plattform[1:])]
-    first_height = sum(heights[:was_plattform[0][0]])
-    test_rocks = target - was_plattform[0][0]
-    first_height += (test_rocks // differences[0][0])*differences[0][1]
-    first_height += sum(heights[was_plattform[0][0]:was_plattform[0][0] + test_rocks % differences[0][0]])
-
-    print(f'The result for solution 1 is: {first_height-1}')
+    # add up the result
+    result += cycle_number*height_per_cycle + (heights[cycle_start + rest] - heights[cycle_start])
+    print(f'The result for solution 2 is: {result}')
 
 
 if __name__ == '__main__':
