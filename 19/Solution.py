@@ -1,6 +1,8 @@
 import collections
 import time
 from heapq import heappop, heappush
+import multiprocessing as mp
+import functools
 
 
 def read_input(path: str = 'input.txt'):
@@ -304,6 +306,26 @@ def main2(time_horizon=32):
     print(f'The result for solution 1 is: {result}')
 
 
+def main1_parallel(time_horizon=24):
+
+    # get the inputs (we now know how much each robot costs)
+    inputs = read_input()
+
+    # go through each factory (and time it)
+    start_time = time.time()
+    with mp.Pool(mp.cpu_count()) as pool:
+        optima = pool.starmap(optimize_factory_heaped, [(factory, time_horizon) for factory in inputs])
+
+    # calculate the result
+    result = 0
+    for idx, (geodes, _) in enumerate(optima, 1):
+        result += idx*geodes
+    print(f'Optimization took {time.time() - start_time: 0.2f} s with {mp.cpu_count()} workers.')
+
+    print(f'The result for solution 1 is: {result}')
+
+
 if __name__ == '__main__':
     main1()
     main2()
+    main1_parallel()
