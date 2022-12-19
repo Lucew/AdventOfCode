@@ -1,6 +1,6 @@
 import collections
 import time
-from functools import lru_cache
+from heapq import heappop, heappush
 
 
 def read_input(path: str = 'input.txt'):
@@ -186,6 +186,89 @@ def optimize_factory(costs: list[tuple[int, int, int, int]], time_horizon: int, 
     return result, counter
 
 
+def optimize_factory_heaped(costs: list[tuple[int, int, int, int]], time_horizon: int, debug=False) -> tuple[int, int]:
+    # get maximum necessary materials
+    max_materials_necessary = [max(cost[idx] for cost in costs) for idx in range(len(costs))]
+    max_materials_necessary[3] = float('inf')  # we need as many geodes opened as possible
+
+    # initialize the heap with tuples
+    # (geode_robots, time_left, materials(ore, clay, obsidian, geodes), robots(ore, clay, obsidian, geodes))
+    queue = [(0, time_horizon, (0, 0, 0, 0), (1, 0, 0, 0))]
+
+    # go through the queue
+    result = 0
+    counter = 0
+    start_time = time.time()
+    state_cache = collections.defaultdict(lambda: -1)
+    while queue:
+
+        # pop from the queue
+        _, time_left, materials, robots = heappop(queue)
+
+        # increase the counter
+        counter += 1
+        if counter % 500_000 == 0 and debug:
+            print(time_left, materials, robots, len(queue))
+            print(f'{counter / 1_000_000:0.1f} M. Result: {result}. Elapsed time: {time.time() - start_time} s.')
+            print()
+
+        # keep track of maximum geodes we can make with this current state (also incorporate the future)
+        result = max(result, materials[3] + robots[3]*time_left)
+
+        # think about whether we can reach the goal if we produce a geode roboter in every step now (upper bound) ------
+        upper_bound_geodes = ((time_left + robots[3]) * (time_left + robots[3] + 1)) // 2 \
+                             - (robots[3] * (robots[3] + 1)) // 2 \
+                             + materials[3]
+        if upper_bound_geodes <= result:
+            continue
+
+        # update the cache and see whether we already found a better path ----------------------------------------------
+        # make and update the cache (for the cache it does not matter how much geode a state has
+        # only how much it can produce as no one can use the geode to make any more robots)
+        key = (time_left, materials[:3], robots)
+        if state_cache[key] >= materials[3]:
+            continue
+        else:
+            state_cache[key] = materials[3]
+
+        # check whether our time is up
+        if not time_left:
+            continue
+
+        # now think about whether it is useful to wait for any materials -----------------------------------------------
+
+        # check whether we wait for any robot because we do not have the material yet
+        # also: we only need to wait for that material if we have a robot for it, otherwise this specific material
+        # will not be growing even if we wait for it
+        should_wait = any(material < max_material and robot
+                          for material, max_material, robot in zip(materials, max_materials_necessary, robots))
+
+        # if we are still shure we should wait, then we append a waiting state
+        if should_wait:
+            new_materials = tuple(material + robot for material, robot in zip(materials, robots))
+            new_robots = robots[:]
+
+            # append to the queue
+            queue.append((-new_robots[3], time_left - 1, new_materials, new_robots))
+
+        # build the robots ---------------------------------------------------------------------------------------------
+        for idx, cost in enumerate(costs):
+
+            # check whether we want and should build the robot
+            if max_materials_necessary[idx] > robots[idx] \
+                    and all(material >= prize for material, prize in zip(materials, cost)):
+                # update the materials we will have in the next step
+                new_materials = tuple(
+                    material + robot - prize for material, robot, prize in zip(materials, robots, cost))
+
+                # update the robots we will have
+                new_robots = tuple(robot + 1 if rx == idx else robot for rx, robot in enumerate(robots))
+
+                # append to the queue
+                queue.append((-new_robots[3], time_left - 1, new_materials, new_robots))
+    return result, counter
+
+
 def main1(time_horizon=24):
 
     # get the inputs (we now know how much each robot costs)
@@ -195,7 +278,8 @@ def main1(time_horizon=24):
     result = 0
     for idx, factory in enumerate(inputs, 1):
         start_time = time.time()
-        best_geodes, steps = optimize_factory(factory, time_horizon)
+        # best_geodes, steps = optimize_factory(factory, time_horizon)
+        best_geodes, steps = optimize_factory_heaped(factory, time_horizon)
         print(f'Factory {idx} for {time_horizon} minutes optimization took {time.time() - start_time: 0.2f} s '
               f'and {steps/1_000_000:0.3f} M steps.')
         result += best_geodes*idx
@@ -212,9 +296,8 @@ def main2(time_horizon=32):
     result = 1
     for idx, factory in enumerate(inputs[:3], 1):
         start_time = time.time()
-        best_geodes, steps = optimize_factory(factory, time_horizon)
-        print(best_geodes)
-        print(f'Factory {idx} for {time_horizon} minutes optimization took {time.time() - start_time: 0.2f} s '
+        best_geodes, steps = optimize_factory_heaped(factory, time_horizon)
+        print(f'Factory {idx} for {time_horizon} minutes optimization took {time.time() - start_time:0.2f} s '
               f'and {steps/1_000_000:0.3f} M steps.')
         result *= best_geodes
 
@@ -222,5 +305,5 @@ def main2(time_horizon=32):
 
 
 if __name__ == '__main__':
-    # main1()
+    main1()
     main2()
