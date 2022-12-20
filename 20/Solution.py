@@ -1,16 +1,9 @@
-from collections import Counter, defaultdict
-from heapq import heappop, heappush, heappushpop
-from functools import reduce
-from bisect import bisect_left, bisect_right
-
-
 class Node:
 
     def __init__(self, value, cycle_length: int, previous_node: 'Node' = None, next_node: 'Node' = None):
         self.val = value
         self.prev = previous_node
         self.next = next_node
-        self.moved = False
         self.cycle = cycle_length
 
     def move(self):
@@ -37,9 +30,6 @@ class Node:
         # cut the chain at this point and insert ourselves
         self.prev.next = self
         self.next.prev = self
-
-        # set our value to moved
-        self.moved = True
 
     def get_element(self, n):
         node = self
