@@ -1,14 +1,15 @@
-import collections
 import re
-from bisect import bisect
+import collections
+import math
 
 
 def read_input(path: str = 'input.txt'):
-    col_blocked = collections.defaultdict(list)
-    row_blocked = collections.defaultdict(list)
-    col_open = collections.defaultdict(list)
-    row_open = collections.defaultdict(list)
     walk_path = ""
+    free = set()
+    blocked = set()
+    row_minmax = collections.defaultdict(lambda: [math.inf, -1])
+    col_minmax = collections.defaultdict(lambda: [math.inf, -1])
+
     with open(path) as filet:
         next_path = False
         for rx, line in enumerate(filet.readlines()):
@@ -26,97 +27,156 @@ def read_input(path: str = 'input.txt'):
             # go through each element and append to the
             # right dict
             for cx, ele in enumerate(line):
+                # update the min max of the rows and columns
+                if ele == '#' or ele == '.':
+                    # update the minima
+                    row_minmax[rx][0] = min(row_minmax[rx][0], cx)
+                    col_minmax[cx][0] = min(col_minmax[cx][0], rx)
+
+                    # update the maxima
+                    row_minmax[rx][1] = max(row_minmax[rx][1], cx)
+                    col_minmax[cx][1] = max(col_minmax[cx][1], rx)
+
+                # update the two sets of occupied or free positions
                 if ele == '.':
-                    col_open[cx].append(rx)
-                    row_open[rx].append(cx)
+                    free.add((rx, cx))
                 elif ele == '#':
-                    col_blocked[cx].append(rx)
-                    row_blocked[rx].append(cx)
+                    blocked.add((rx, cx))
 
-    return row_open, col_open, row_blocked, col_blocked, walk_path
+    return free, blocked, walk_path, row_minmax, col_minmax
 
 
-def make_step(instruction: str, position: list[int, int, str], turning: dict[str: dict[str: str], str: dict[str: str]],
-              row_open: dict[int: list[int]], col_open: dict[int: list[int]],
-              row_blocked: dict[int: list[int]], col_blocked: dict[int: list[int]]):
+def next_position(rx: int, cx: int, direction: str,
+                  row_minmax: dict[int: list[int, int]], col_minmax: dict[int: list[int, int]]):
 
-    # check row or col depending on the direction we are facing
-    if position[2] == '>' or position[2] == '<':
-        pass
-    elif position[2] == '^' or position[2] == 'v':
-        pass
+    # calculate the new position based on the direction
+    if direction == '>':
+        cx += 1
+        # check whether we wrapped around
+        if cx > row_minmax[rx][1]:
+            cx = row_minmax[rx][0]
+    elif direction == '<':
+        cx -= 1
+        # check whether we wrapped around
+        if cx < row_minmax[rx][0]:
+            cx = row_minmax[rx][1]
+    elif direction == '^':
+        rx -= 1
+        # check whether we wrapped around
+        if rx < col_minmax[cx][0]:
+            rx = col_minmax[cx][1]
+    elif direction == 'v':
+        rx += 1
+        # check whether we wrapped around
+        if rx > col_minmax[cx][1]:
+            rx = col_minmax[cx][0]
     else:
         raise NotImplementedError
+    return rx, cx
 
 
-def check_path(position, steps, free: list[int], blocked: list[int]):
+def wrap_around(rx: int, cx: int, direction: str,
+                  row_minmax: dict[int: list[int, int]], col_minmax: dict[int: list[int, int]]):
 
-    # trivial case
-    if not position:
-        return position
-
-    # get the minimum and maximum point (to calculate the length of this row/col)
-    min_coord = min(free[0] if free else -1, blocked[0] if blocked else -1)
-    max_coord = min(free[-1] if free else float('inf'), blocked[-1] if blocked else float('inf'))
-    row_length = max_coord - min_coord + 1
-
-    # check whether we will wrap around and get our new position (in relation to starting point)
-    wraps, relative_posi = divmod(position + steps, row_length)
-
-    # check whether anything is blocked in our line
-    if not blocked:
-        return relative_posi + min_coord
-
-    # something in our way is blocked
+    # calculate the new position based on the direction
+    if direction == '>':
+        cx += 1
+        # check whether we wrapped around
+        if cx > row_minmax[rx][1]:
+            cx = row_minmax[rx][0]
+    elif direction == '<':
+        cx -= 1
+        # check whether we wrapped around
+        if cx < row_minmax[rx][0]:
+            cx = row_minmax[rx][1]
+    elif direction == '^':
+        rx -= 1
+        # check whether we wrapped around
+        if rx < col_minmax[cx][0]:
+            rx = col_minmax[cx][1]
+    elif direction == 'v':
+        rx += 1
+        # check whether we wrapped around
+        if rx > col_minmax[cx][1]:
+            rx = col_minmax[cx][0]
     else:
-        # bisect the blocked list in order to check for the next block
-        blocked_idx = bisect(blocked, position)
-
-        # if we go to the smaller indices (left for row or up for column), we will hit either the blocked element
-        # to the left/up of us, or we hit the highest element
-        if steps < 0:
-
-            # lets check whether there is an element smaller than us in the sorted list
-            if blocked_idx-1 > 0:
-
-                # there is an element smaller than us, so we return us right of it or our - steps position
-                return max(blocked[blocked_idx] + 1, )
-            else:
-                blocked[-1]
-
-
-def multiply_list(max_position, ):
-
+        raise NotImplementedError
+    return rx, cx
 
 
 def main1():
 
     # get the input readings
-    row_open, col_open, row_blocked, col_blocked, path = read_input()
+    free, blocked, path, row_minmax, col_minmax = read_input()
 
     # extract the commands from the path
-    path = re.findall(r'[0-9]*[A-Z]', path)
-    max_steps = max(int(ele[:-1]) for ele in path)
-
-    # multiply the list for easy binary search for the next collision
-
+    path = re.findall(r'[0-9]*[A-Z]', path + '.')
 
     # turning dict for quick turning
-    turning = {'R': {'>': 'v', '<': '^', 'v': '<', '^': '>'}, 'L': {'>': '^', '<': 'v', 'v': '>', '^': '<'}}
+    turning = {'R': {'>': 'v', '<': '^', 'v': '<', '^': '>'}, 'L': {'>': '^', '<': 'v', 'v': '>', '^': '<'},
+               '.': {'>': '>', '<': '<', 'v': 'v', '^': '^'}}
+
+    # find the starting point
+    start = row_minmax[0][0]
+    while (0, start) in blocked:
+        start += 1
 
     # go through the maze
-    position = [0, row_open[0][0], '>']
-    print(max_steps)
+    position = [0, start, '>']
     for command in path:
 
-        pass
+        # get the amount of steps
+        steps = int(command[:-1])
 
-    result = 0
+        # make the steps
+        for step in range(steps):
+
+            # get the new position
+            rx, cx = next_position(*position, row_minmax, col_minmax)
+
+            # check whether the way is blocked
+            if (rx, cx) in blocked:
+                break
+
+            # check whether we can go there
+            elif (rx, cx) in free:
+                position[0] = rx
+                position[1] = cx
+
+        # make the rotation
+        position[2] = turning[command[-1]][position[2]]
+
+    # make a dict for value translation of the direction
+    value = {'>': 0, '<': 2, 'v': 1, '^': 3}
+    print(position)
+
+    result = 1000*(position[0]+1) + 4*(position[1]+1) + value[position[2]]
     print(f'The result for solution 1 is: {result}')
 
 
 def main2():
-    result = 0
+
+    # get the input readings
+    free, blocked, path, row_minmax, col_minmax = read_input()
+
+    # extract the commands from the path
+    path = re.findall(r'[0-9]*[A-Z]', path + '.')
+
+    # turning dict for quick turning
+    turning = {'R': {'>': 'v', '<': '^', 'v': '<', '^': '>'}, 'L': {'>': '^', '<': 'v', 'v': '>', '^': '<'},
+               '.': {'>': '>', '<': '<', 'v': 'v', '^': '^'}}
+
+    # find the starting point
+    start = row_minmax[0][0]
+    while (0, start) in blocked:
+        start += 1
+    position = [0, start, '>']
+
+    # make a dict for value translation of the direction
+    value = {'>': 0, '<': 2, 'v': 1, '^': 3}
+    print(position)
+
+    result = 1000 * (position[0] + 1) + 4 * (position[1] + 1) + value[position[2]]
     print(f'The result for solution 2 is: {result}')
 
 
