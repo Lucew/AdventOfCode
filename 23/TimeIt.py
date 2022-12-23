@@ -135,5 +135,5 @@ if __name__ == '__main__':
                         help='Exact names of functions we want to test.')
     parser.add_argument('-ms', '--measurements', type=int, default=5,
                         help='Measurements. The amount of runs is: functions*measurements*repetitions.')
-    parser.add_argument('-rs', '--repetitions', type=int, default=100, help='Repetitions per measurement.')
+    parser.add_argument('-rs', '--repetitions', type=int, default=1, help='Repetitions per measurement.')
     main(parser.parse_args())

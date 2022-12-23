@@ -10,11 +10,12 @@ def read_input(path: str = 'input.txt') -> set[tuple[int, int]]:
     return inputs
 
 
-def scan_surrounding(rx: int, cx: int, elves: set[tuple[int, int]]) -> list[int, int, int, int]:
+def scan_surrounding(rx: int, cx: int, elves: set[tuple[int, int]]) -> tuple[list[int, int, int, int], bool]:
 
     # make an array for surrounding elves
     # north, south, west, east
     surr = [0]*4
+    somebody = False
 
     for (nrx, ncx) in ((rx+1, cx), (rx-1, cx), (rx, cx+1), (rx, cx-1), (rx+1, cx+1),
                        (rx-1, cx-1), (rx+1, cx-1), (rx-1, cx+1)):
@@ -28,13 +29,16 @@ def scan_surrounding(rx: int, cx: int, elves: set[tuple[int, int]]) -> list[int,
             surr[2] += ncx < cx
             # elf is east
             surr[3] += ncx > cx
-    return surr
+
+            # we met an elf!
+            somebody = True
+    return surr, somebody
 
 
-def planned_position(rx, cx, surrounding_elves: list[int, int, int, int], direction_pointer):
+def planned_position(rx, cx, surrounding_elves: list[int, int, int, int], direction_pointer, has_neighbour):
 
     # check whether our elf will not be moving
-    if all(direction == 0 for direction in surrounding_elves):
+    if not has_neighbour:
         return rx, cx, True
 
     for idx in range(direction_pointer, direction_pointer + 4):
@@ -120,10 +124,10 @@ def main1(rounds=10):
 
             # scan the surrounding
             # [north, south, west, east]
-            surr = scan_surrounding(rx, cx, elves)
+            surr, has_neighbour = scan_surrounding(rx, cx, elves)
 
             # check for a place to move to according to our current priority
-            nrx, ncx, is_static = planned_position(rx, cx, surr, direction_pointer)
+            nrx, ncx, is_static = planned_position(rx, cx, surr, direction_pointer, has_neighbour)
             static_elves += is_static
 
             # check whether we collide with an elf
