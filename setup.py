@@ -1,6 +1,7 @@
 from argparse import ArgumentParser, ArgumentTypeError
 import os
 import shutil
+import datetime
 
 
 def directory_number(x):
@@ -8,6 +9,15 @@ def directory_number(x):
     if x < 1 or x > 25:
         raise ArgumentTypeError("Number needs to be between 1 and 25 (including).")
     return x
+
+
+def aoc_year(x):
+    x = int(x)
+    if x < 2015:
+        raise ArgumentTypeError("AoC year can not lie before the first year of AoC (2015).")
+    if x > datetime.date.today().year:
+        raise ArgumentTypeError(f"AoC year can not lie in the future (current year {datetime.date.today().year}).")
+    return str(x)
 
 
 # check whether we want to have the timer file
@@ -19,7 +29,9 @@ def copy_timer_file(file_path: str, destination_folder: str):
 
 
 def main(args):
-    folder_name = f'{args.number:02d}'
+
+    # make the folder
+    folder_name = os.path.join(args.year, f'{args.number:02d}')
     default_file = 'default.py'
     timer_file = 'TimeIt.py'
 
@@ -43,7 +55,7 @@ def main(args):
     with open(os.path.join(folder_name, args.solution_name), 'w') as f:
         f.write(content)
 
-    # create the input file
+    # create the input file for every step along the way
     with open(os.path.join(folder_name, args.input_name), 'w') as f:
         f.write("")
 
@@ -60,14 +72,17 @@ if __name__ == '__main__':
 
     # go through the folders and check whether they exist
     new_folder = 0
+    year = str(datetime.date.today().year)
     for number in range(1, 26):
-        if not os.path.isdir(f'{number:02d}'):
+        if not os.path.isdir(os.path.join(year, f'{number:02d}')):
             new_folder = number
             break
     if not new_folder:
         print(f'All folders from 01 to 25 are already there.')
         exit(-1)
 
+    parser.add_argument('-y', '--year', default=year, type=aoc_year,
+                        help='The number of the new folder')
     parser.add_argument('-n', '--number', default=new_folder, type=directory_number,
                         help='The number of the new folder')
     parser.add_argument('-sn', '--solution_name', default='Solution.py', help='The name of the initial python file.')
