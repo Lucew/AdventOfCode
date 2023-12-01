@@ -1,2 +1,2 @@
-# 2022_AdventOfCode
-The code for the participation at the advent of code 2022 (https://adventofcode.com/)
+# Advent Of Code
+This repository contains my solutions to the yearly Puzzle December [Advent of Code](https://adventofcode.com/)
