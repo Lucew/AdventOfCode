@@ -54,7 +54,6 @@ def main2():
                             (rx - 1, cx + 1), (rx + 1, cx - 1), (rx - 1, cx - 1), (rx + 1, cx + 1)]
              if ele == '*'}
     found_nums = {tupled: [] for tupled in valid.values()}
-    print(found_nums)
 
     # make a second scan and find all valid numbers and put them to each gear
     for rx, line in enumerate(read_input()):
@@ -74,7 +73,7 @@ def main2():
             for nrx, ncx in nextto:
                 found_nums[(nrx, ncx)].append(currnum)
             cx += 1
-    print(found_nums)
+
     # compute the gear things
     result = 0
     for _, nums in found_nums.items():
