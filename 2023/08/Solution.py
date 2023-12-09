@@ -77,6 +77,7 @@ def main2():
         path_length[start] = steps
 
     # compute the result by using gcd
+    print(path_length)
     result = functools.reduce(math.lcm, path_length.values())
     print(path_length)
     print(f'The result for solution 2 is: {result}')
