@@ -20,42 +20,47 @@ def main1(k=1):
     field = [list(line) for line in read_input()]
 
     # check for empty rows
-    empty_rows = {idx for idx, row in enumerate(field) if all(ele == "." for ele in row)}
-    empty_cols = {cx for cx in range(len(field[0])) if all(row[cx] == "." for row in field)}
+    empty_rows = sorted(idx for idx, row in enumerate(field) if all(ele == "." for ele in row))
+    empty_cols = sorted([cx for cx in range(len(field[0])) if all(row[cx] == "." for row in field)])
 
-    # run from every point at the same time
-    queue = collections.deque([(rx, cx, 0, rx*len(field[0])+cx)
-                               for rx, row in enumerate(field) for cx, ele in enumerate(row) if ele == '#'])
+    # go through each line and find all the galaxies and calculate distance to partners
+    galaxies = []
+    result = 0
+    cnt = 0
+    for rx, row in enumerate(field):
+        for cx, ele in enumerate(row):
 
-    visited = {ele[3]: {ele[:2]} for ele in queue}
-    shortest_paths = collections.defaultdict(lambda: len(field[0])+len(field)+1)
-    while queue:
-
-        # get the current point and make a step
-        rx, cx, steps, ident = queue.popleft()
-
-        # make the steps into a direction
-        for nrx, ncx, direct in [(rx+1, cx, "v"), (rx-1, cx, "v"), (rx, cx+1, "h"), (rx, cx-1, "h")]:
-            if nrx < 0 or ncx < 0 or nrx >= len(field) or ncx >= len(field[0]) or (nrx, ncx) in visited[ident]:
+            # check if ele is void (we could continue then)
+            if ele == ".":
                 continue
-            if field[nrx][ncx] == "#":
-                pair_ident = tuple(sorted((ident, nrx*len(field[0])+ncx)))
-                shortest_paths[pair_ident] = min(steps+1, shortest_paths[pair_ident])
-                continue
-            visited[ident].add((nrx, ncx))
-            new_steps = steps + 1
-            if direct == "v" and nrx in empty_rows:
-                new_steps += k
-            elif direct == "h" and ncx in empty_cols:
-                new_steps += k
-            queue.append((nrx, ncx, new_steps, ident))
 
-    print(f'The result for solution 1 is: {sum(shortest_paths.values())}')
+            # we found a galaxy and now compute the steps between the galaxies with under consideration of the
+            # dilation of the universe (finding empty rows and cols between)
+            cnt += 1
+            for orx, ocx, ocnt in galaxies:
+
+                # get minimum and maximum row
+                minrx, maxrx = sorted((rx, orx))
+                mincx, maxcx = sorted((cx, ocx))
+
+                # find the number of dilated rows and cols in the way
+                num_rows = bisect_left(empty_rows, maxrx) - bisect(empty_rows, minrx)
+                num_rows = max(0, num_rows)
+                num_cols = bisect_left(empty_cols, maxcx) - bisect(empty_cols, mincx)
+                num_cols = max(0, num_cols)
+
+                # compute the distance
+                result += (maxrx-minrx) + (maxcx-mincx) + k*num_rows + k*num_cols
+
+            # append the galaxy for other galaxies to be found
+            galaxies.append((rx, cx, cnt))
+    if k == 1:
+        print(f'The result for solution 1 is: {result}')
+    return result
 
 
 def main2():
-    result = 0
-    print(f'The result for solution 2 is: {result}')
+    print(f'The result for solution 2 is: {main1(k=1000000-1)}')
 
 
 if __name__ == '__main__':
