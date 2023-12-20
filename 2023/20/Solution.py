@@ -202,14 +202,17 @@ def main2():
     # get the graph with initialized elements
     graph = make_graph()
 
-    # make a list of elements that are of interest to us
+    # make a list of elements that are of interest to us (these are the inputs of the
+    # conjunction that triggers rx taken from mapping out the circuit)
     interest = {"lz": [0], "kh": [0], "tg": [0], "hn": [0]}
 
     # make cycles
     for idx in range(15000):
         _ = make_cycle(graph, 0, 0, interest, idx)
 
-    # check for cycle length
+    # check for cycle length (fortunately the input interest elements only fire once
+    # per button smash, therefore we can only look at button smashes and do not
+    # need to look at fire rate)
     cycles = []
     for ele, values in interest.items():
         diffs = [a[1]-b[1] for a, b in zip(values[2:], values[1:-1])]
