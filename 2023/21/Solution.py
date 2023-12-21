@@ -66,12 +66,13 @@ def main1(target_steps=64, lines=None):
 
 def calc_parabola_vertex(x1, y1, x2, y2, x3, y3):
 
+    # compute the parameters a, b, c for polynomial ax^2 + bx + c using three points
     denom = (x1-x2) * (x1-x3) * (x2-x3)
-    A = (x3 * (y2-y1) + x2 * (y1-y3) + x1 * (y3-y2)) / denom
-    B = (x3*x3 * (y1-y2) + x2*x2 * (y3-y1) + x1*x1 * (y2-y3)) / denom
-    C = (x2 * x3 * (x2-x3) * y1+x3 * x1 * (x3-x1) * y2+x1 * x2 * (x1-x2) * y3) / denom
+    a = (x3 * (y2-y1) + x2 * (y1-y3) + x1 * (y3-y2)) / denom
+    b = (x3*x3 * (y1-y2) + x2*x2 * (y3-y1) + x1*x1 * (y2-y3)) / denom
+    c = (x2 * x3 * (x2-x3) * y1+x3 * x1 * (x3-x1) * y2+x1 * x2 * (x1-x2) * y3) / denom
 
-    return A, B, C
+    return a, b, c
 
 
 def main2():
@@ -94,6 +95,7 @@ def main2():
     assert all(lines[rx][start[1]] != "#" for rx in range(len(lines))), "Column is not highway."
 
     # the function is a quadratic, so we find the first three values and can fit the polynomial
+    # it is then only approximate, but it works due to the high number and the assumptions above
 
     # find the index of the first point
     first_point = target_steps % len(lines)
