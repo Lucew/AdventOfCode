@@ -217,6 +217,7 @@ def main2():
     for ele, values in interest.items():
         diffs = [a[1]-b[1] for a, b in zip(values[2:], values[1:-1])]
         cycles.append(diffs[-1])
+    print(cycles)
     print(f'The result for solution 1 is: {math.lcm(*cycles)}')
 
 
