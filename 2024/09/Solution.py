@@ -1,5 +1,8 @@
-import collections
-import functools
+from collections import Counter, defaultdict
+from heapq import heappop, heappush, heappushpop
+from functools import reduce
+from bisect import bisect_left, bisect_right, bisect
+import itertools
 
 
 def read_input(path: str = 'input.txt'):
@@ -7,70 +10,107 @@ def read_input(path: str = 'input.txt'):
     with open(path) as filet:
         for line in filet.readlines():
             line = line.rstrip()
-            inputs.append([-5 if ele == '.' else int(ele) for ele in line])
-    return inputs
+            inputs.append(line)
+    inputs = inputs[0]
+
+    # go through the inputs and get (file id, start, end) and free spaces
+    memory = [(0, -1, -1)]
+    for idx, (file, free_space) in enumerate(itertools.zip_longest(inputs[::2], inputs[1::2], fillvalue=0)):
+        memory.append([idx, memory[-1][-1]+1, memory[-1][-1]+int(file)])
+        if free_space:
+            memory.append([-1, memory[-1][-1]+1, memory[-1][-1]+int(free_space)])
+    memory = memory[1:]
+
+    # get the empty spaces with the first one beeing last
+    empty_spaces = [ele for ele in reversed(memory) if ele[0] == -1]
+    files = [ele for ele in memory if ele[0] != -1]
+    return memory, files, empty_spaces
+
+def print_memory(memory: list[tuple[int, int, int]]):
+    out_str = []
+    for typed, start, end in memory:
+        if typed < 0:
+            out_str.append('.'*(end-start+1))
+        else:
+            out_str.append(str(typed)*(end-start+1))
+    print(''.join(out_str))
+
+
+def file_sum(file_id, start, end):
+
+    # get the sum from to
+    upper = ((end+1)*end)//2
+    lower = ((start-1)*start)//2
+    return (upper-lower)*file_id
+
 
 
 def main1():
-    result = 0
 
-    # get the input into memory
-    mapped = read_input()
-    m = len(mapped)
-    n = len(mapped[0])
+    # get the memory footprint
+    memory, files, empty_spaces = read_input()
 
-    # go from the nines and keep track, which tiles are reachable
-    for __rx, row in enumerate(mapped):
-        for __cx, val in enumerate(row):
+    # reduce the memory until there are no more empty spaces
+    finished_files = []
+    while empty_spaces:
 
-            # check whether we encountered a starting position
-            if val != 0: continue
+        # check that the current empty space is before us
+        while empty_spaces and empty_spaces[-1][1] > files[-1][2]:
+            empty_spaces.pop()
+        if not empty_spaces:
+            break
 
-            # set up a bfs and keep track of visited paths
-            found_nines = 0
-            queue = collections.deque([(__rx, __cx)])
-            visited = {(__rx, __cx)}
-            while queue:
+        # get the last block of memory and put it into the first empty space
+        # print('File', files[-1], '-', empty_spaces)
+        file_id, start, end = files.pop()
 
-                # get current position
-                rx, cx = queue.popleft()
-
-                # go to all four directions
-                for nrx, ncx in [(rx+1, cx), (rx-1, cx), (rx, cx+1), (rx, cx-1)]:
-                    if 0 <= nrx < m and 0 <= ncx < n and (nrx, ncx) not in visited and mapped[nrx][ncx] == mapped[rx][cx]+1:
-                        visited.add((nrx, ncx))
-                        if mapped[nrx][ncx] == 9:
-                            found_nines += 1
-                        else:
-                            queue.append((nrx, ncx))
-            # start at the current position
-            result += found_nines
+        # check whether the empty space is larger than our file
+        e_id, e_start, e_end = empty_spaces.pop()
+        if e_end-e_start > end-start:
+            finished_files.append((file_id, e_start, e_start+(end-start)))
+            empty_spaces.append((e_id, e_start+(end-start+1), e_end))
+        elif e_end-e_start == end-start:
+            finished_files.append((file_id, e_start, e_end))
+        else:
+            finished_files.append((file_id, e_start, e_end))
+            files.append((file_id, start, end-(e_end-e_start+1)))
+        # print('Files - ', files)
+        # print('Empty - ', empty_spaces)
+        # print('Finished - ', finished_files)
+        # print()
+    # print_memory(sorted(files + finished_files, key=lambda x: x[1]))
+    result = sum(file_sum(*file) for file in itertools.chain(finished_files, files))
     print(f'The result for solution 1 is: {result}')
+
 
 def main2():
 
-    # get the input into memory
-    mapped = read_input()
-    m = len(mapped)
-    n = len(mapped[0])
+    # get the memory footprint
+    memory, files, empty_spaces = read_input()
+    empty_spaces = empty_spaces[::-1]
 
-    # make a memoized dfs (and keep memory over the loop)
-    @functools.cache
-    def dfs(rx, cx):
-        if mapped[rx][cx] == 9:
-            return 1
+    # reduce the memory until there are no more empty spaces
+    finished_files = []
+    while files:
 
-        # go through all possible paths
-        found_nines = 0
-        for nrx, ncx in [(rx+1, cx), (rx-1, cx), (rx, cx+1), (rx, cx-1)]:
-            if 0 <= nrx < m and 0 <= ncx < n and (nrx, ncx) and mapped[nrx][ncx] == mapped[rx][cx] + 1:
-                found_nines += dfs(nrx, ncx)
-        return found_nines
+        # get the current file
+        curr_file = files.pop()
+        curr_files_size = curr_file[2]-curr_file[1]
 
-    # go from the nines and keep track, which tiles are reachable
-    result = sum(dfs(__rx, __cx) for __rx, row in enumerate(mapped) for __cx, val in enumerate(row)
-                 if mapped[__rx][__cx] == 0)
-
+        # search the leftmost fitting free space
+        min_idx = -1
+        for idx, (e_id, start, end) in enumerate(empty_spaces):
+            # the conditions are: 1) must fit 2) must be current best empty space 3) must be before number placement
+            if end-start >= curr_files_size and (min_idx == -1 or (start < empty_spaces[min_idx][1])) and start < curr_file[1]:
+                min_idx = idx
+        if min_idx >= 0:
+            e_id, start, end = empty_spaces[min_idx]
+            finished_files.append((curr_file[0], start, start+curr_files_size))
+            empty_spaces[min_idx] = (e_id, start+curr_files_size+1, end)
+            empty_spaces.append((e_id, curr_file[1], curr_file[2]))
+        else:
+            finished_files.append(curr_file)
+    result = sum(file_sum(*file) for file in itertools.chain(finished_files))
     print(f'The result for solution 2 is: {result}')
 
 
