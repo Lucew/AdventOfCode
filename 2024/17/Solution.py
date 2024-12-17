@@ -118,6 +118,11 @@ def main1():
 
 def step(a_register):
     # This is simply the instructions coded by my program!
+    # the program basically takes the last three bits of the a_register, makes some deterministic
+    # calculations on them (two XORs)
+    #
+    # the main trick is that it uses all upper leftover parts of a for a XOR calculation, therefore we
+    # need backtracking.
 
     # get the last three bits into b
     b_register = a_register&7
