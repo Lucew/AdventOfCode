@@ -35,6 +35,10 @@ def main(args):
     default_file = 'default.py'
     timer_file = 'TimeIt.py'
 
+    # check whether we have to create the year folder
+    if not os.path.isdir(args.year):
+        os.mkdir(args.year)
+
     # check whether folder already exists
     if os.path.isdir(folder_name):
         print(f'Folder {folder_name} already exists and cannot be initialized.')
