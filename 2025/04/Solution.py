@@ -18,6 +18,8 @@ def check_neighbours(rx, cx, field):
     for nrx, ncx in ((rx+1, cx),(rx-1, cx),(rx, cx+1),(rx, cx-1),(rx+1, cx+1),(rx+1, cx-1),(rx-1, cx+1),(rx-1, cx-1)):
         if 0 <= nrx < len(field) and 0 <= ncx < len(field[0]):
             sourroundercounter += field[nrx][ncx] == '@'
+            if sourroundercounter >= 4:
+                break
     return sourroundercounter
 
 
